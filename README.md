@@ -1,232 +1,148 @@
 # Working with Docker Images
 
-# Step-by-step process
+Got it ✅ — thanks for sharing the feedback.
 
-Below is a compact, practical workflow you can follow to complete a project based on the content in your screenshot (Introduction → Pulling images). It covers everything from installing Docker to building, inspecting, pushing, and cleaning images — with commands and deliverables you can submit as evidence.
+Below is a compact, practical workflow to complete a project based on the content in your screenshot (Introduction → Pulling images). It covers everything from installing Docker to building, inspecting, pushing, and cleaning images — with commands and deliverables you can submit as evidence.
+
+> *Containerize a static HTML webpage using Nginx on an Ubuntu EC2 instance, expose port 80, and verify it in a browser. Then push the custom image to Docker Hub.*
+
+Let me break down the **correct step-by-step process** that directly matches the assignment:
 
 ---
 
-## 1. Prerequisites
+## 🔹 Correct Step-by-Step Project Workflow
 
-1. Install Docker (Docker Desktop on Windows/Mac; Docker Engine on Linux).
-2. Verify installation:
+### 1. Launch an EC2 Instance
+
+1. Log into your **AWS Console** → go to **EC2 service**.
+
+2. Launch a new instance:
+
+   * Choose **Ubuntu Server 22.04 LTS (x86\_64)**.
+   * Select instance type: **t2.micro (free tier)**.
+   * Configure key pair for SSH.
+   * Configure **Security Group**:
+
+     * Allow **SSH (port 22)** from your IP.
+     * Allow **HTTP (port 80)** from anywhere (0.0.0.0/0).
+   * Launch instance.
+
+3. SSH into the instance:
 
    ```bash
-   docker version
-   docker info
+   ssh -i your-key.pem ubuntu@<EC2-Public-IP>
    ```
-3. Create (or have) a Docker Hub account (or other registry) for pushing images:
+
+---
+
+### 2. Install Docker on EC2
+
+Run the following on your EC2:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+Check:
+
+```bash
+docker --version
+```
+
+---
+
+### 3. Prepare Static Website Content
+
+1. On your EC2, create a project folder:
 
    ```bash
-   docker login
+   mkdir ~/nginx-web && cd ~/nginx-web
+   ```
+2. Add a simple `index.html`:
+
+   ```html
+   <!DOCTYPE html>
+   <html>
+   <head>
+     <title>My Dockerized Webpage</title>
+   </head>
+   <body>
+     <h1>Hello from Docker + Nginx on AWS EC2!</h1>
+   </body>
+   </html>
    ```
 
 ---
 
-## 2. Quick concept check (what an image is)
+### 4. Write the Dockerfile
 
-* **Docker image** = packaged filesystem + metadata + instructions (created from a `Dockerfile`).
-* **Container** = a running instance of an image; containers share the host kernel and are lightweight compared to full VMs.
+Use **official Nginx image** as base:
+
+```dockerfile
+FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/index.html
+```
 
 ---
 
-## 3. Explore and pull images from Docker Hub
+### 5. Build and Run the Docker Image
 
-1. **Search the public registry**:
+1. Build:
 
    ```bash
-   docker search ubuntu
+   sudo docker build -t mynginx:1.0 .
    ```
-
-   * Use the official and trusted sources (look for `OFFICIAL` star counts).
-2. **Pull a specific image**:
+2. Run container and expose **port 80**:
 
    ```bash
-   docker pull ubuntu:22.04
+   sudo docker run -d -p 80:80 mynginx:1.0
    ```
-3. **List images on your local machine**:
+3. Verify container is running:
 
    ```bash
-   docker images
+   sudo docker ps
    ```
-4. **Tip:** Always pin tags (e.g., `ubuntu:22.04` vs `ubuntu:latest`) to ensure repeatability.
 
 ---
 
-## 4. Run and inspect containers (show isolation & behavior)
+### 6. Verify in Browser
 
-1. Start an interactive container:
+* Open browser and go to:
+  `http://<EC2-Public-IP>`
+* You should see: **Hello from Docker + Nginx on AWS EC2!**
+
+---
+
+### 7. Push Custom Image to Docker Hub
+
+1. Log in:
 
    ```bash
-   docker run --rm -it ubuntu:22.04 bash
+   sudo docker login
    ```
-2. From the host, list containers and view details:
+2. Tag image:
 
    ```bash
-   docker ps -a
-   docker inspect <container-id-or-name>
-   docker logs <container-id-or-name>
-   docker exec -it <container-id> bash   # attach to running container
+   sudo docker tag mynginx:1.0 yourdockerhubusername/mynginx:1.0
    ```
-3. Observe isolation: inside the container run `ps aux`, `hostname`, check files under `/proc/self/cgroup`.
-
----
-
-## 5. Build your own image (create a Dockerfile)
-
-1. Create a minimal app (example: `app.py`) and a `Dockerfile`:
-
-   ```dockerfile
-   FROM python:3.11-slim
-   WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-   COPY . .
-   EXPOSE 8080
-   USER 1000
-   CMD ["python", "app.py"]
-   ```
-2. Add `.dockerignore` to exclude unnecessary files (e.g., `.git`, `node_modules`).
-3. Build the image:
+3. Push:
 
    ```bash
-   docker build -t myapp:1.0 .
-   ```
-4. Verify the image:
-
-   ```bash
-   docker images myapp
-   docker history myapp:1.0
-   docker image inspect myapp:1.0
+   sudo docker push yourdockerhubusername/mynginx:1.0
    ```
 
 ---
 
-## 6. Run your image with common options
+### 8. Final Deliverables (for submission)
 
-* Detached, port mapping, named container, mounted volume:
+* **Dockerfile** (with Nginx base + COPY index.html).
+* **index.html** (static page).
+* Screenshot of:
 
-  ```bash
-  docker run -d --name myapp1 -p 8080:8080 -v "$PWD/config":/app/config myapp:1.0
-  ```
-* Remove container on exit:
-
-  ```bash
-  docker run --rm --name temp -it myapp:1.0 bash
-  ```
-
----
-
-## 7. Tagging and pushing to a registry
-
-1. Tag for Docker Hub (or your registry):
-
-   ```bash
-   docker tag myapp:1.0 yourusername/myapp:1.0
-   ```
-2. Push:
-
-   ```bash
-   docker push yourusername/myapp:1.0
-   ```
-3. Pull back on another machine to verify:
-
-   ```bash
-   docker pull yourusername/myapp:1.0
-   ```
-
----
-
-## 8. Export/import images (offline transfer)
-
-* Save (export) to tar:
-
-  ```bash
-  docker save -o myapp_1.0.tar yourusername/myapp:1.0
-  ```
-* Load on another host:
-
-  ```bash
-  docker load -i myapp_1.0.tar
-  ```
-
----
-
-## 9. Inspect image contents & history
-
-* See layer history:
-
-  ```bash
-  docker history myapp:1.0
-  ```
-* Inspect config and labels:
-
-  ```bash
-  docker image inspect myapp:1.0
-  ```
-
----
-
-## 10. Clean up and housekeeping
-
-* Remove an image:
-
-  ```bash
-  docker rmi myapp:1.0
-  ```
-* Remove dangling images:
-
-  ```bash
-  docker image prune
-  ```
-* Full prune (use with caution):
-
-  ```bash
-  docker system prune -a
-  ```
-
----
-
-## 11. Security & best practices (apply to images)
-
-* Use minimal, well-maintained base images (alpine / slim variants where appropriate).
-* Pin versions in `FROM` lines.
-* Use `.dockerignore` to keep images small.
-* Avoid embedding secrets into images (use environment variables, secrets management, or mounted files).
-* Run as a non-root user (`USER` in Dockerfile).
-* Add `HEALTHCHECK` to the Dockerfile for liveness monitoring.
-* Scan images for vulnerabilities (`docker scan <image>` or tools like Trivy).
-
----
-
-## 12. Deliverables / Evidence to include for your project submission
-
-* Repo folder `working-with-docker-images/` containing:
-
-  * `Dockerfile` + `app` code (sample app).
-  * `.dockerignore`.
-  * A short `README.md` with the exact commands you ran.
-  * A text file `evidence.txt` with outputs of:
-
-    * `docker images`
-    * `docker ps -a`
-    * `docker inspect <image-or-container>`
-    * `docker history myapp:1.0`
-  * Optional: `myapp_1.0.tar` (saved image) or a link to the pushed image on Docker Hub.
-* A 1-page summary that explains:
-
-  * What an image is, and how it differs from a container and a VM.
-  * How you built/pulled and pushed an image.
-  * A short comparison of runtime/resource footprint versus a VM (observed `docker stats` output if you ran experiments).
-
----
-
-## Quick checklist (tick off as you go)
-
-* [ ] Docker installed and `docker version` OK
-* [ ] Pulled at least one public image (`docker pull`)
-* [ ] Ran a container interactively and inspected it (`docker run`, `docker inspect`)
-* [ ] Built a custom image from Dockerfile (`docker build`)
-* [ ] Tagged & pushed image to a registry (`docker tag` + `docker push`)
-* [ ] Saved/loaded an image (`docker save`/`docker load`)
-* [ ] Documented commands & outputs in README / evidence file
+  * EC2 instance running.
+  * `docker ps` showing container running.
+  * Browser showing webpage via EC2 public IP.
+  * Docker Hub repository with your pushed image.
