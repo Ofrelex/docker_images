@@ -1,7 +1,5 @@
 # Working with Docker Images
 
-Got it ✅ — thanks for sharing the feedback.
-
 Below is a compact, practical workflow to complete a project based on the content in your screenshot (Introduction → Pulling images). It covers everything from installing Docker to building, inspecting, pushing, and cleaning images — with commands and deliverables you can submit as evidence.
 
 > *Containerize a static HTML webpage using Nginx on an Ubuntu EC2 instance, expose port 80, and verify it in a browser. Then push the custom image to Docker Hub.*
